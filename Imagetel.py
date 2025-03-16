@@ -7,7 +7,7 @@ import base64
 from io import BytesIO
 from PIL import Image
 
-TELEGRAM_API_TOKEN = ""
+TELEGRAM_TOKEN = ""
 
 user_started = {}
 last_message_time_global = 0
