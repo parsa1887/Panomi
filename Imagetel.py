@@ -123,9 +123,13 @@ async def about(update: Update, context):
     await update.message.reply_text("""سلام! من گورباه هستم. یک مدل زبانی که میتونی باهاش حرف بزنی.
 با استفاده از دستور /generate میتونی عکس دلخواهت رو بسازی
 
-مثال : /generate Cat
+مثال :
+/generate Cat
+
 برای حرف زدن به من فقط کافیه قبل از پیامت 2 تا اسلش بزاری.
-اینجوری : //سلام""")
+اینجوری : //سلام
+
+Creator : @FalllenKnight""")
 
 # راه‌اندازی بات تلگرام
 if __name__ == '__main__':
