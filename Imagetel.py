@@ -89,19 +89,16 @@ async def start(update: Update, context):
 async def handle_message(update: Update, context):
     user_id = update.message.from_user.id
     global last_message_time_global
-    chat_type = update.message.chat.type
     current_time = time.time()
 
     if user_started.get(user_id, False):
         if current_time - last_message_time_global < 5:
             await update.message.reply_text("!برای ارسال پیام بعدی 5 ثانیه صبر کن", reply_to_message_id=update.message.message_id)
             return
-        if chat_type == "private": 
-            response = send_message_to_old_api(user_message)
-            last_message_time_global = current_time
-            await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
-            user_message = update.message.text
-            print(f"User: {user_message}")
+
+        
+        user_message = update.message.text
+        print(f"User: {user_message}")
 
         # بررسی اگر پیام شامل کامند /t باشد
         if user_message.startswith("/t"):
