@@ -152,19 +152,19 @@ async def start_game(update: Update, context: CallbackContext):
 
     # بررسی اینکه آیا کاربر در حال بازی است
     if user_id in user_game_status and user_game_status[user_id][0]:
-        await update.message.reply_text("شما در حال حاضر در بازی هستید. برای خروج دوباره دستور /game را وارد کنید.")
+        await update.message.reply_text("شما در حال حاضر در بازی هستید. برای خروج دوباره دستور /exit را وارد کنید.")
         return
 
     # شروع بازی
     operator = random.choice(['+', '-', '*', '/'])
-    num1 = random.randint(1, 10)
-    num2 = random.randint(1, 10)
+    num1 = random.randint(1, 20)
+    num2 = random.randint(1, 30)
 
     if operator == '/':
         # اگر عملیات تقسیم باشد، اطمینان حاصل می‌کنیم که تقسیم بر صفر نشود و جواب صحیح به دست بیاید.
         num1 = num1 * num2
 
-    question = f"{num1} {operator} {num2}?"
+    question = f"چه می‌شود اگر {num1} {operator} {num2}؟"
     answer = eval(f"{num1} {operator} {num2}")
 
     # ذخیره جواب درست برای مقایسه بعدی
@@ -181,11 +181,15 @@ async def check_answer(update: Update, context: CallbackContext):
 
     correct_answer, question = user_game_status[user_id][1], user_game_status[user_id][2]
 
-    if update.message.text.strip() == str(correct_answer):
-        await update.message.reply_text(f"درست است! پاسخ شما صحیح است.\nبرای شروع بازی جدید /game را وارد کنید.")
-        user_game_status[user_id] = (False, None, None)  # بازی به پایان می‌رسد
+    # بررسی اینکه پیام کاربر به پیام ربات ریپلای شده است
+    if update.message.reply_to_message and update.message.reply_to_message.text == question:
+        if update.message.text.strip() == str(correct_answer):
+            await update.message.reply_text(f"درست است! پاسخ شما صحیح است.\nبرای شروع بازی جدید /game را وارد کنید.")
+            user_game_status[user_id] = (False, None, None)  # بازی به پایان می‌رسد
+        else:
+            await update.message.reply_text(f"پاسخ اشتباه است! دوباره تلاش کنید.\nسوال: {question}")
     else:
-        await update.message.reply_text(f"پاسخ اشتباه است! دوباره تلاش کنید.\nسوال: {question}")
+        await update.message.reply_text("لطفاً به سوال قبلی پاسخ دهید.")
 
 # تابعی برای خروج از بازی
 async def end_game(update: Update, context: CallbackContext):
@@ -196,13 +200,15 @@ async def end_game(update: Update, context: CallbackContext):
     else:
         await update.message.reply_text("شما در حال حاضر در بازی نیستید.")
 
-# هندلر برای شروع بازی و بررسی جواب‌ها
+# هندلر برای شروع بازی، بررسی جواب‌ها و خروج از بازی
 async def handle_game(update: Update, context: CallbackContext):
     user_message = update.message.text.strip().lower()
 
     if user_message == '/game':
         await start_game(update, context)
-    elif user_message.isdigit():
+    elif user_message == '/exit':
+        await end_game(update, context)
+    elif update.message.reply_to_message:  # اگر به پیام ربات ریپلای زده شده باشد
         await check_answer(update, context)
 
 # راه‌اندازی بات تلگرام
