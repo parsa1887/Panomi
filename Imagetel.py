@@ -151,15 +151,11 @@ async def start_game(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
 
     # بررسی اینکه آیا کاربر در حال بازی است
-    if user_id in user_game_status and user_game_status[user_id]:
+    if user_id in user_game_status and user_game_status[user_id][0]:
         await update.message.reply_text("شما در حال حاضر در بازی هستید. برای خروج دوباره دستور /game را وارد کنید.")
         return
 
     # شروع بازی
-    user_game_status[user_id] = True
-    await update.message.reply_text("بازی ریاضی شروع شد! من یک سوال از شما می‌پرسم، شما باید جواب صحیح رو ارسال کنید.")
-
-    # تولید یک سوال ریاضی تصادفی
     operator = random.choice(['+', '-', '*', '/'])
     num1 = random.randint(1, 10)
     num2 = random.randint(1, 10)
@@ -168,32 +164,34 @@ async def start_game(update: Update, context: CallbackContext):
         # اگر عملیات تقسیم باشد، اطمینان حاصل می‌کنیم که تقسیم بر صفر نشود و جواب صحیح به دست بیاید.
         num1 = num1 * num2
 
-    question = f"چه می‌شود اگر {num1} {operator} {num2}؟"
+    question = f"{num1} {operator} {num2}?"
     answer = eval(f"{num1} {operator} {num2}")
 
     # ذخیره جواب درست برای مقایسه بعدی
-    user_game_status[user_id] = (answer, question)
+    user_game_status[user_id] = (True, answer, question)
+    await update.message.reply_text("بازی ریاضی شروع شد! من یک سوال از شما می‌پرسم، شما باید جواب صحیح رو ارسال کنید.")
     await update.message.reply_text(question)
 
 # تابعی برای بررسی جواب کاربر
 async def check_answer(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
-    if user_id not in user_game_status or not user_game_status[user_id]:
+    if user_id not in user_game_status or not user_game_status[user_id][0]:
+        await update.message.reply_text("شما در حال حاضر در بازی نیستید. برای شروع بازی دستور /game را وارد کنید.")
         return  # اگر کاربر در حال بازی نباشد، جواب را بررسی نمی‌کنیم
 
-    correct_answer, question = user_game_status[user_id]
+    correct_answer, question = user_game_status[user_id][1], user_game_status[user_id][2]
 
     if update.message.text.strip() == str(correct_answer):
         await update.message.reply_text(f"درست است! پاسخ شما صحیح است.\nبرای شروع بازی جدید /game را وارد کنید.")
-        user_game_status[user_id] = False  # بازی به پایان می‌رسد
+        user_game_status[user_id] = (False, None, None)  # بازی به پایان می‌رسد
     else:
         await update.message.reply_text(f"پاسخ اشتباه است! دوباره تلاش کنید.\nسوال: {question}")
 
 # تابعی برای خروج از بازی
 async def end_game(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
-    if user_id in user_game_status and user_game_status[user_id]:
-        user_game_status[user_id] = False
+    if user_id in user_game_status and user_game_status[user_id][0]:
+        user_game_status[user_id] = (False, None, None)
         await update.message.reply_text("بازی تمام شد. می‌توانید از دستورهای دیگر استفاده کنید.")
     else:
         await update.message.reply_text("شما در حال حاضر در بازی نیستید.")
