@@ -6,6 +6,7 @@ import time
 import base64
 from io import BytesIO
 from PIL import Image
+import random
 
 user_started = {}
 last_message_time_global = 0
@@ -131,10 +132,75 @@ async def about(update: Update, context):
 
 Creator : @FalllenKnight""")
 
+
+user_game_status = {}
+
+# تابعی برای شروع بازی ریاضی
+async def start_game(update: Update, context: CallbackContext):
+    user_id = update.message.from_user.id
+
+    # بررسی اینکه آیا کاربر در حال بازی است
+    if user_id in user_game_status and user_game_status[user_id]:
+        await update.message.reply_text("شما در حال حاضر در بازی هستید. برای خروج دوباره دستور /game را وارد کنید.")
+        return
+
+    # شروع بازی
+    user_game_status[user_id] = True
+    await update.message.reply_text("بازی ریاضی شروع شد! من یک سوال از شما می‌پرسم، شما باید جواب صحیح رو ارسال کنید.")
+
+    # تولید یک سوال ریاضی تصادفی
+    operator = random.choice(['+', '-', '*', '/'])
+    num1 = random.randint(1, 10)
+    num2 = random.randint(1, 10)
+
+    if operator == '/':
+        # اگر عملیات تقسیم باشد، اطمینان حاصل می‌کنیم که تقسیم بر صفر نشود و جواب صحیح به دست بیاید.
+        num1 = num1 * num2
+
+    question = f"چه می‌شود اگر {num1} {operator} {num2}؟"
+    answer = eval(f"{num1} {operator} {num2}")
+
+    # ذخیره جواب درست برای مقایسه بعدی
+    user_game_status[user_id] = (answer, question)
+    await update.message.reply_text(question)
+
+# تابعی برای بررسی جواب کاربر
+async def check_answer(update: Update, context: CallbackContext):
+    user_id = update.message.from_user.id
+    if user_id not in user_game_status or not user_game_status[user_id]:
+        return  # اگر کاربر در حال بازی نباشد، جواب را بررسی نمی‌کنیم
+
+    correct_answer, question = user_game_status[user_id]
+
+    if update.message.text.strip() == str(correct_answer):
+        await update.message.reply_text(f"درست است! پاسخ شما صحیح است.\nبرای شروع بازی جدید /game را وارد کنید.")
+        user_game_status[user_id] = False  # بازی به پایان می‌رسد
+    else:
+        await update.message.reply_text(f"پاسخ اشتباه است! دوباره تلاش کنید.\nسوال: {question}")
+
+# تابعی برای خروج از بازی
+async def end_game(update: Update, context: CallbackContext):
+    user_id = update.message.from_user.id
+    if user_id in user_game_status and user_game_status[user_id]:
+        user_game_status[user_id] = False
+        await update.message.reply_text("بازی تمام شد. می‌توانید از دستورهای دیگر استفاده کنید.")
+    else:
+        await update.message.reply_text("شما در حال حاضر در بازی نیستید.")
+
+# هندلر برای شروع بازی و بررسی جواب‌ها
+async def handle_game(update: Update, context: CallbackContext):
+    user_message = update.message.text.strip().lower()
+
+    if user_message == '/game':
+        await start_game(update, context)
+    elif user_message.isdigit():
+        await check_answer(update, context)
+
 # راه‌اندازی بات تلگرام
 if __name__ == '__main__':
     application = ApplicationBuilder().token("8126551595:AAFt2nIDQNOa82PSO9ZDSj5_bzld-8MpEsc").build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("about", about))
+    application.add_handler(CommandHandler("game", start_game))
     application.add_handler(MessageHandler(filters.TEXT, handle_message))
     application.run_polling(drop_pending_updates=True)
