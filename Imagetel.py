@@ -124,7 +124,7 @@ Creator : @PnMiiii""")
 
 # راه‌اندازی بات تلگرام
 if __name__ == '__main__':
-    application = ApplicationBuilder().token(TELEGRAM_API_TOKEN).build()
+    application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("about", about))
     application.add_handler(MessageHandler(filters.TEXT, handle_message))
