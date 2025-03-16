@@ -173,6 +173,12 @@ async def handle_math(update: Update, context: CallbackContext):
         # ارسال نتیجه به کاربر
         await update.message.reply_text(f"نتیجه {user_message} برابر با {result}")
 
+# هندلر برای شناسایی پیام‌های ریاضی و ارسال نتیجه
+math_handler = MessageHandler(Filters.text & ~Filters.command, handle_math)
+
+# افزودن هندلر به اپلیکیشن
+dispatcher.add_handler(math_handler)
+
 # راه‌اندازی بات تلگرام
 if __name__ == '__main__':
     application = ApplicationBuilder().token("8126551595:AAFt2nIDQNOa82PSO9ZDSj5_bzld-8MpEsc").build()
