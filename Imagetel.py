@@ -129,7 +129,8 @@ async def about(update: Update, context):
 
 # راه‌اندازی بات تلگرام
 if __name__ == '__main__':
-    application = ApplicationBuilder().token('8126551595:AAFt2nIDQNOa82PSO9ZDSj5_bzld-8MpEsc').build()
+    TELEGRAM_API_TOKEN = ""
+    application = ApplicationBuilder().token(f'{TELEGRAM_API_TOKEN}').build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("about", about))
     application.add_handler(MessageHandler(filters.TEXT, handle_message))
