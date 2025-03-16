@@ -140,6 +140,7 @@ async def about(update: Update, context):
 
     **Creator:** [@FalllenKnight](https://t.me/FalllenKnight) 📱
     """
+    # در اینجا از MarkdownV2 برای فرار دادن کاراکترهای خاص استفاده می‌شود.
     await update.message.reply_text(about_message, parse_mode="MarkdownV2")
 
 
