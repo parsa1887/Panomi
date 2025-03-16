@@ -7,7 +7,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, CallbackContext
 
 # توکن ربات تلگرام خود را اینجا قرار بده
-TELEGRAM_API_TOKEN = '8126551595:AAFt2nIDQNOa82PSO9ZDSj5_bzld-8MpEsc'
+TELEGRAM_API_TOKEN = ''
 
 # URL API برای تولید تصویر
 url = "https://ai-api.magicstudio.com/api/ai-art-generator"
