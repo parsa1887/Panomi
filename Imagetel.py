@@ -120,9 +120,12 @@ async def handle_message(update: Update, context):
 
 
 async def about(update: Update, context):
-    await update.message.reply_text("""سلام, من گورباه حکیم هستم. هر سوالی بپرسی رو میتونم جواب بدم.
+    await update.message.reply_text("""سلام! من گورباه هستم. یک مدل زبانی که میتونی باهاش حرف بزنی.
+با استفاده از دستور /generate میتونی عکس دلخواهت رو بسازی
 
-Creator : @PnMiiii""")
+مثال : /generate Cat
+برای حرف زدن به من فقط کافیه قبل از پیامت 2 تا اسلش بزاری.
+اینجوری : //سلام""")
 
 # راه‌اندازی بات تلگرام
 if __name__ == '__main__':
