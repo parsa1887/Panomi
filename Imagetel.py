@@ -1,45 +1,19 @@
 import requests
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
-from telegram.ext import CallbackContext
-import time
 import base64
 from io import BytesIO
 from PIL import Image
+import time
+from telegram import Update
+from telegram.ext import Application, CommandHandler, CallbackContext
 
-user_started = {}
-last_message_time_global = 0
+# توکن ربات تلگرام خود را اینجا قرار بده
+TELEGRAM_API_TOKEN = '8126551595:AAFt2nIDQNOa82PSO9ZDSj5_bzld-8MpEsc'
 
-# تابع ارسال پیام به API قدیمی (chatbot-ji1z)
-def send_message_to_old_api(user_message):
-    url = "https://chatbot-ji1z.onrender.com/chatbot-ji1z"
-    headers = {
-        "accept": "application/json",
-        "content-type": "application/json",
-        "origin": "https://seoschmiede.at",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
-        "sec-fetch-site": "cross-site",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-dest": "empty",
-        "sec-ch-ua": '"Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"',
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": '"Windows"',
-        "accept-encoding": "identity",  # غیرفعال کردن فشرده‌سازی
-        "accept-language": "en-US,en;q=0.9"
-    }
-    payload = {"messages": [{"role": "user", "content": user_message}]}
-    proxies = {"http": None, "https": None}
-    try:
-        response = requests.post(url, json=payload, headers=headers, proxies=proxies)
-        response.raise_for_status()
-        api_response = response.json()
-        return api_response['choices'][0]['message']['content']
-    except requests.exceptions.RequestException as e:
-        return f"Error: {e}"
+# URL API برای تولید تصویر
+url = "https://ai-api.magicstudio.com/api/ai-art-generator"
 
 # تابعی برای تولید تصویر از پرامپت
 def generate_image(prompt: str):
-    url = "https://ai-api.magicstudio.com/api/ai-art-generator"
     request_timestamp = int(time.time())
 
     data = {
@@ -78,52 +52,28 @@ def generate_image(prompt: str):
     else:
         return None
 
-# هندلر شروع بات
-async def start(update: Update, context):
-    user_id = update.message.from_user.id
-    user_started[user_id] = True
-    await update.message.reply_text("سلام! من گورباه هستم چه کمکی میتونم بکنم بهت؟")
+# تابع برای دستور /generate
+async def generate(update: Update, context: CallbackContext):
+    if context.args:
+        prompt = ' '.join(context.args)
+        progress_message = await update.message.reply_text("Generating...")
 
-# هندلر برای دریافت پیام‌ها و ارسال آن به API
-async def handle_message(update: Update, context):
-    user_id = update.message.from_user.id
-    global last_message_time_global
-    current_time = time.time()
-
-    if user_started.get(user_id, False):
-        if current_time - last_message_time_global < 5:
-            await update.message.reply_text("!برای ارسال پیام بعدی 5 ثانیه صبر کن", reply_to_message_id=update.message.message_id)
-            return
-
-        user_message = update.message.text
-        print(f"User: {user_message}")
-
-        # بررسی اگر پیام شامل دستور تولید تصویر باشد
-        if user_message.startswith("/generate"):
-            prompt = ' '.join(user_message.split()[1:])
-            progress_message = await update.message.reply_text("Generating image...")
+        try:
             image_buffer = generate_image(prompt)
             if image_buffer:
                 await update.message.reply_photo(photo=image_buffer)
             else:
                 await progress_message.edit_text("Error generating image.")
-        else:
-            response = send_message_to_old_api(user_message)
-            print(f"ChatBot: {response}")
-            last_message_time_global = current_time
-            await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
+        except Exception as e:
+            await progress_message.edit_text(f"An error occurred: {str(e)}")
     else:
-        await update.message.reply_text("لطفا اول دستور /start رو وارد کنید تا بتوانید از ربات استفاده کنید.", reply_to_message_id=update.message.message_id)
+        await update.message.reply_text("Please provide a prompt after /generate.")
 
-async def about(update: Update, context):
-    await update.message.reply_text("""سلام, من گورباه حکیم هستم. هر سوالی بپرسی رو میتونم جواب بدم.
-
-Creator : @PnMiiii""")
-
-# راه‌اندازی بات تلگرام
-if __name__ == '__main__':
-    application = ApplicationBuilder().token("8126551595:AAFt2nIDQNOa82PSO9ZDSj5_bzld-8MpEsc").build()
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("about", about))
-    application.add_handler(MessageHandler(filters.TEXT, handle_message))
+# تابع اصلی برای راه‌اندازی ربات
+def main():
+    application = Application.builder().token(TELEGRAM_API_TOKEN).build()
+    application.add_handler(CommandHandler("generate", generate))
     application.run_polling(drop_pending_updates=True)
+
+if __name__ == '__main__':
+    main()
