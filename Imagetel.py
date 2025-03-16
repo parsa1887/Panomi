@@ -7,6 +7,8 @@ import base64
 from io import BytesIO
 from PIL import Image
 
+TELEGRAM_API_TOKEN = ""
+
 user_started = {}
 last_message_time_global = 0
 
@@ -122,7 +124,7 @@ Creator : @PnMiiii""")
 
 # راه‌اندازی بات تلگرام
 if __name__ == '__main__':
-    application = ApplicationBuilder().token('8126551595:AAFt2nIDQNOa82PSO9ZDSj5_bzld-8MpEsc').build()
+    application = ApplicationBuilder().token(TELEGRAM_API_TOKEN).build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("about", about))
     application.add_handler(MessageHandler(filters.TEXT, handle_message))
