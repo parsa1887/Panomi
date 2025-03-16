@@ -174,7 +174,7 @@ async def handle_math(update: Update, context: CallbackContext):
         await update.message.reply_text(f"نتیجه {user_message} برابر با {result}")
 
 # هندلر برای شناسایی پیام‌های ریاضی و ارسال نتیجه
-math_handler = MessageHandler(Filters.text & ~Filters.command, handle_math)
+math_handler = MessageHandler(filters.text & ~filters.command, handle_math)
 
 # افزودن هندلر به اپلیکیشن
 dispatcher.add_handler(math_handler)
