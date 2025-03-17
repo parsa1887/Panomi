@@ -9,6 +9,7 @@ from PIL import Image
 import random
 import re
 
+user_memory = {}
 user_started = {}
 last_message_time_global = 0
 
@@ -29,13 +30,27 @@ def send_message_to_old_api(user_message):
         "accept-encoding": "identity",  # غیرفعال کردن فشرده‌سازی
         "accept-language": "en-US,en;q=0.9"
     }
-    payload = {"messages": [{"role": "user", "content": user_message}]}
-    proxies = {"http": None, "https": None}
+
+    if user_id not in user_memory:
+        user_memory[user_id] = []
+    user_memory[user_id].append({"role": "user", "content": user_message})
+    
+    payload = {"messages": user_memory[user_id]}
     try:
-        response = requests.post(url, json=payload, headers=headers, proxies=proxies)
+        response = requests.post(url, json=payload, headers=headers)
         response.raise_for_status()
         api_response = response.json()
-        return api_response['choices'][0]['message']['content']
+        bot_reply = api_response['choices'][0]['message']['content']
+
+        # ذخیره پاسخ ربات در حافظه
+        user_memory[user_id].append({"role": "assistant", "content": bot_reply})
+
+        # محدود کردن تعداد پیام‌های ذخیره‌شده برای هر کاربر
+        if len(user_memory[user_id]) > 10:  # مثلا فقط ۱۰ پیام اخیر را ذخیره کنیم
+            user_memory[user_id] = user_memory[user_id][-10:]
+
+        return bot_reply
+
     except requests.exceptions.RequestException as e:
         return f"Error: {e}"
 
