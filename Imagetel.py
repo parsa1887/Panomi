@@ -9,6 +9,15 @@ from PIL import Image
 import random
 import re
 
+friendly_responses = [
+    "کص نگو کیرکلع",
+    "چی میگی ؟",
+    "بفرما",
+    "هاا؟",
+    "کیر خر گوساله میگم 10 روزه نخوابیدم",
+    "سلام عشقم چیزی لازم داری ؟"
+]
+
 user_started = {}
 last_message_time_global = 0
 
@@ -91,6 +100,11 @@ async def handle_message(update: Update, context):
     if user_started.get(user_id, False):
         if current_time - last_message_time_global < 5:
             await update.message.reply_text("!برای ارسال پیام بعدی 5 ثانیه صبر کن", reply_to_message_id=update.message.message_id)
+            return
+            
+        if "گورباه" in user_message:
+            response = random.choice(friendly_responses)
+            await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
             return
 
         # بررسی اگر پیام با نقطه شروع شده باشد، ارسال به Old API
