@@ -31,7 +31,7 @@ def send_message_to_old_api(user_message):
         "accept-language": "en-US,en;q=0.9"
     }
 
-    if user_id not in user_memory:
+     if user_id not in user_memory:
         user_memory[user_id] = []
     user_memory[user_id].append({"role": "user", "content": user_message})
     
@@ -46,7 +46,7 @@ def send_message_to_old_api(user_message):
         user_memory[user_id].append({"role": "assistant", "content": bot_reply})
 
         # محدود کردن تعداد پیام‌های ذخیره‌شده برای هر کاربر
-        if len(user_memory[user_id]) > 10:  # مثلا فقط ۱۰ پیام اخیر را ذخیره کنیم
+        if len(user_memory[user_id]) > 10:
             user_memory[user_id] = user_memory[user_id][-10:]
 
         return bot_reply
@@ -115,14 +115,14 @@ async def handle_message(update: Update, context):
 
         # بررسی اگر پیام با نقطه شروع شده باشد، ارسال به Old API
         if user_message.startswith("."):
-            response = send_message_to_old_api(user_message[1:].strip())  # حذف نقطه و ارسال پیام
+            response = send_message_to_old_api(user_id, user_message[1:].strip())  # حالا user_id را هم می‌فرستیم
             last_message_time_global = current_time
             await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
             return
 
         # بررسی ریپلای بودن پیام
         if update.message.reply_to_message and update.message.reply_to_message.from_user.id == context.bot.id:
-            response = send_message_to_old_api(user_message)
+            response = send_message_to_old_api(user_id, user_message)
             last_message_time_global = current_time
             await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
             return  
@@ -199,7 +199,7 @@ async def idea_command(update: Update, context: CallbackContext):
     prompt_text = f"hi could you please give me a prompt for making an image of {user_input}. just give me the prompt."
     
     # ارسال پیام به API قدیمی
-    response = send_message_to_old_api(prompt_text)
+    response = send_message_to_old_api(update.message.from_user.id, prompt_text)
 
     # ارسال نتیجه به کاربر
     await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
