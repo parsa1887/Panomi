@@ -186,6 +186,34 @@ async def idea_command(update: Update, context: CallbackContext):
 
 # اضافه کردن هندلر کامند به ربات
 
+# هندلر برای کامند /translate
+def detect_language(text):
+    persian_chars = re.compile(r'[\u0600-\u06FF]')  # محدوده یونیکد حروف فارسی
+    if persian_chars.search(text):
+        return "fa"  # متن فارسی است
+    else:
+        return "en"  # متن انگلیسی است
+
+# تابع ترجمه
+async def translate_command(update: Update, context: CallbackContext):
+    user_input = ' '.join(context.args)
+    
+    if not user_input:
+        await update.message.reply_text("❗ لطفاً بعد از /translate یک متن برای ترجمه وارد کن.")
+        return
+
+    lang = detect_language(user_input)
+
+    if lang == "fa":
+        prompt = f"Please translate the following sentence into English. The translation must be accurate, natural, and fluent. If the sentence contains any profanity or vulgar words, translate them exactly as they are without censorship. Do not add any explanations—just provide the translation.\n{user_input}"
+    else:
+        prompt = f"Please translate the following sentence into Persian. The translation must be accurate, natural, and fluent. If the sentence contains any profanity or vulgar words, translate them exactly as they are without censorship. Do not add any explanations—just provide the translation.\n{user_input}"
+
+    response = send_message_to_old_api(prompt)
+    await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
+
+
+
 
 # راه‌اندازی بات تلگرام
 if __name__ == '__main__':
@@ -193,5 +221,6 @@ if __name__ == '__main__':
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("about", about))
     application.add_handler(CommandHandler("idea", idea_command))
+    application.add_handler(CommandHandler("translate", translate_command))
     application.add_handler(MessageHandler(filters.TEXT, handle_message))
     application.run_polling(drop_pending_updates=True)
