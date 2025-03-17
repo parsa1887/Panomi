@@ -9,7 +9,6 @@ from PIL import Image
 import random
 import re
 
-user_memory = {}
 user_started = {}
 last_message_time_global = 0
 
@@ -30,43 +29,24 @@ def send_message_to_old_api(user_message):
         "accept-encoding": "identity",  # غیرفعال کردن فشرده‌سازی
         "accept-language": "en-US,en;q=0.9"
     }
-
-     if user_id not in user_memory:
-        user_memory[user_id] = []
-    user_memory[user_id].append({"role": "user", "content": user_message})
-    
-    payload = {"messages": user_memory[user_id]}
+    payload = {"messages": [{"role": "user", "content": user_message}]}
+    proxies = {"http": None, "https": None}
     try:
-        response = requests.post(url, json=payload, headers=headers)
+        response = requests.post(url, json=payload, headers=headers, proxies=proxies)
         response.raise_for_status()
         api_response = response.json()
-        bot_reply = api_response['choices'][0]['message']['content']
-
-        # ذخیره پاسخ ربات در حافظه
-        user_memory[user_id].append({"role": "assistant", "content": bot_reply})
-
-        # محدود کردن تعداد پیام‌های ذخیره‌شده برای هر کاربر
-        if len(user_memory[user_id]) > 10:
-            user_memory[user_id] = user_memory[user_id][-10:]
-
-        return bot_reply
-
+        return api_response['choices'][0]['message']['content']
     except requests.exceptions.RequestException as e:
         return f"Error: {e}"
 
 # تابعی برای تولید تصویر از پرامپت
 def generate_image(prompt: str):
     url = "https://ai-api.magicstudio.com/api/ai-art-generator"
-    request_timestamp = int(time.time())
-
     data = {
         "prompt": prompt,
         "output_format": "base64",
-        "user_profile_id": "null",
-        "anonymous_user_id": "fd44c67b-0582-40cb-95b6-66cc68e24346",
-        "request_timestamp": request_timestamp,
-        "user_is_subscribed": False,
-        "client_id": "pSgX7WgjukXCBoYwDM8G8GLnRRkvAoJlqa5eAVvj95o"
+        "user_is_subscribed": True,
+
     }
 
     headers = {
@@ -115,14 +95,14 @@ async def handle_message(update: Update, context):
 
         # بررسی اگر پیام با نقطه شروع شده باشد، ارسال به Old API
         if user_message.startswith("."):
-            response = send_message_to_old_api(user_id, user_message[1:].strip())  # حالا user_id را هم می‌فرستیم
+            response = send_message_to_old_api(user_message[1:].strip())  # حذف نقطه و ارسال پیام
             last_message_time_global = current_time
             await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
             return
 
         # بررسی ریپلای بودن پیام
         if update.message.reply_to_message and update.message.reply_to_message.from_user.id == context.bot.id:
-            response = send_message_to_old_api(user_id, user_message)
+            response = send_message_to_old_api(user_message)
             last_message_time_global = current_time
             await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
             return  
@@ -199,7 +179,7 @@ async def idea_command(update: Update, context: CallbackContext):
     prompt_text = f"hi could you please give me a prompt for making an image of {user_input}. just give me the prompt."
     
     # ارسال پیام به API قدیمی
-    response = send_message_to_old_api(update.message.from_user.id, prompt_text)
+    response = send_message_to_old_api(prompt_text)
 
     # ارسال نتیجه به کاربر
     await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
