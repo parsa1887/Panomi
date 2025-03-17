@@ -18,6 +18,12 @@ friendly_responses = [
     "سلام عشقم چیزی لازم داری ؟"
 ]
 
+def GORBAH(message):
+    # استفاده از re برای جستجو
+    if re.search(r'\bگورباه\b', message, re.IGNORECASE):  # \b برای جستجوی کلمه کامل "گورباه"
+        return True
+    return False
+
 user_started = {}
 last_message_time_global = 0
 
@@ -102,7 +108,7 @@ async def handle_message(update: Update, context):
             await update.message.reply_text("!برای ارسال پیام بعدی 5 ثانیه صبر کن", reply_to_message_id=update.message.message_id)
             return
             
-        if "گورباه" in user_message:
+        if GORBAH(user_message):
             response = random.choice(friendly_responses)
             await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
             return
