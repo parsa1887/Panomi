@@ -89,26 +89,31 @@ async def start(update: Update, context):
 async def handle_message(update: Update, context):
     user_id = update.message.from_user.id
     global last_message_time_global
+    chat_type = update.message.chat.type
     current_time = time.time()
+    user_message = update.message.text
 
     if user_started.get(user_id, False):
         if current_time - last_message_time_global < 5:
             await update.message.reply_text("!برای ارسال پیام بعدی 5 ثانیه صبر کن", reply_to_message_id=update.message.message_id)
             return
 
-        
-        user_message = update.message.text
-        print(f"User: {user_message}")
-
-        # بررسی اگر پیام شامل کامند /t باشد
-        if user_message.startswith("/t"):
-            # حذف /t از ابتدا و ارسال پیام به API قدیمی
-            response = send_message_to_old_api(user_message[2:].strip())  # حذف فضای اضافی
-            print(f"ChatBot: {response}")
+        # بررسی اگر پیام با نقطه شروع شده باشد، ارسال به Old API
+        if user_message.startswith("."):
+            response = send_message_to_old_api(user_message[1:].strip())  # حذف نقطه و ارسال پیام
             last_message_time_global = current_time
             await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
-        # بررسی اگر پیام شامل دستور تولید تصویر باشد
-        elif user_message.startswith("/generate"):
+            return
+
+        # بررسی ریپلای بودن پیام
+        if update.message.reply_to_message and update.message.reply_to_message.from_user.id == context.bot.id:
+            response = send_message_to_old_api(user_message)
+            last_message_time_global = current_time
+            await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
+            return  
+
+        # بررسی دستور /generate
+        if user_message.startswith("/generate"):
             prompt = ' '.join(user_message.split()[1:])
             progress_message = await update.message.reply_text("Generating image...")
             image_buffer = generate_image(prompt)
@@ -116,6 +121,8 @@ async def handle_message(update: Update, context):
                 await update.message.reply_photo(photo=image_buffer)
             else:
                 await progress_message.edit_text("Error generating image.")
+            return
+
     else:
         await update.message.reply_text("لطفا اول دستور /start رو وارد کنید تا بتوانید از ربات استفاده کنید.", reply_to_message_id=update.message.message_id)
 
@@ -123,65 +130,73 @@ async def handle_message(update: Update, context):
 
 async def about(update: Update, context):
     about_message = """
-    🌟 **سلام! من گورباه هستم!** 🌟
+    ✨ **سلام! من گورباه هستم!** ✨
 
-    من یک مدل زبانی هوشمندم که می‌توانی با من صحبت کنی، سوالاتت را بپرسی و از امکانات جالب من استفاده کنی. 😊  
+    یک دستیار هوشمند که می‌توانی با من صحبت کنی، سؤال بپرسی و از قابلیت‌های من استفاده کنی. 🤖🎉  
 
-    👨‍💻 **ویژگی‌های من:**  
-    - با دستور `/generate` می‌توانی تصاویر دلخواهت را بسازی. کافیست موضوع را مشخص کنی و من یک تصویر جادویی برایت خلق می‌کنم! 🎨  
-    - می‌توانم محاسبات ریاضی را برایت انجام دهم، فقط کافیست مسئله‌ی خود را ارسال کنی.  
-      - **مثال:** `22+70`  
+    ━━━━━━━━ ⭐ ━━━━━━━━
 
-    📝 **چطور با من صحبت کنی؟**  
-    - برای ارسال پیام، کافیست قبل از متن دو اسلش (`/t`) قرار دهی.  
-      - **مثال:** `/tسلام گورباه!`  
+    🔹 **چی کار می‌کنم؟**
 
-    🔧 **نکات مهم:**  
-    - من در حال یادگیری و بهبود هستم تا بتوانم بهتر کمکت کنم. اگر پیشنهادی داری، خوشحال می‌شوم بشنوم! 🤖  
+    
+    🔸 **🎨 تصویر بساز!**
+
+    
+    ➤ با `/generate [موضوع]`، تصویر دلخواهت را خلق کن!  
+
+
+    🔸 **💬 حرف بزن!**
+
+    
+    ➤ کافیه به پیام من **ریپلای** کنی تا جوابت رو بدم.  
+
+    🔸 **📝 ايده براي ساخت عکس!**
+
+    
+    ➤ ميتوني با اين دستور يک پرامپت دريافت کني و باهاش عکس بسازي!
+
+    
+    ➤ مثال : /idae لوگو بتمن
+
+    ━━━━━━━━ 🚀 ━━━━━━━━  
+
+    🛠 **در حال توسعه و بهبود!**
+    
+    اگر ایده‌ای داری، خوشحال می‌شم بشنوم! 🤩  
 
     **سازنده:** [@FalllenKnight](https://t.me/FalllenKnight) 📱  
     """
-    # در اینجا از MarkdownV2 برای فرار دادن کاراکترهای خاص استفاده می‌شود.
     await update.message.reply_text(about_message)
 
 
-async def handle_math(update: Update, context: CallbackContext):
-    user_message = update.message.text.strip()
 
-    # الگوی جستجو برای عملیات ریاضی (جمع، تفریق، ضرب، تقسیم)
-    pattern = r'(\d+)\s*([+\-*/])\s*(\d+)'
+# هندلر برای کامند /idea
+async def idea_command(update: Update, context: CallbackContext):
+    # دریافت متن ورودی بعد از /idea
+    user_input = ' '.join(context.args)
 
-    match = re.search(pattern, user_message)
+    # بررسی اینکه کاربر ورودی داده است یا نه
+    if not user_input:
+        await update.message.reply_text("❗ لطفاً بعد از /idea یک موضوع وارد کن.")
+        return
+    
+    # متن پیشفرض که باید همراه با ورودی ارسال شود
+    prompt_text = f"hi could you please give me a prompt for making an image of {user_input}. just give me the prompt."
+    
+    # ارسال پیام به API قدیمی
+    response = send_message_to_old_api(prompt_text)
 
-    if match:
-        num1 = int(match.group(1))
-        operator = match.group(2)
-        num2 = int(match.group(3))
+    # ارسال نتیجه به کاربر
+    await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
 
-        # محاسبه جواب
-        if operator == '+':
-            result = num1 + num2
-        elif operator == '-':
-            result = num1 - num2
-        elif operator == '*':
-            result = num1 * num2
-        elif operator == '/':
-            if num2 != 0:
-                result = num1 / num2
-            else:
-                result = "خطا! تقسیم بر صفر مجاز نیست."
+# اضافه کردن هندلر کامند به ربات
 
-        # ارسال نتیجه به کاربر
-        await update.message.reply_text(f"نتیجه {user_message} برابر با {result}")
-
-# هندلر برای شناسایی پیام‌های ریاضی و ارسال نتیجه
-math_handler = MessageHandler(filters.TEXT & ~filters.COMMAND, handle_math)
 
 # راه‌اندازی بات تلگرام
 if __name__ == '__main__':
     application = ApplicationBuilder().token("8126551595:AAFt2nIDQNOa82PSO9ZDSj5_bzld-8MpEsc").build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("about", about))
-    application.add_handler(math_handler)
+    application.add_handler(CommandHandler("idea", idea_command))
     application.add_handler(MessageHandler(filters.TEXT, handle_message))
     application.run_polling(drop_pending_updates=True)
