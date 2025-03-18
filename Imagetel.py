@@ -111,6 +111,7 @@ def generate_image(prompt: str):
 
 # هندلر شروع بات
 async def start(update: Update, context):
+    global user_id
     user_id = update.message.from_user.id
     user_started[user_id] = True
     await update.message.reply_text("سلام! من گورباه هستم چه کمکی میتونم بکنم بهت؟")
