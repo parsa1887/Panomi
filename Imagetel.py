@@ -133,26 +133,7 @@ async def handle_message(update: Update, context):
             await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
             return
 
-        # بررسی اگر پیام با نقطه شروع شده باشد، ارسال به Old API
-        if user_message.startswith("."):
-            response = send_message_to_old_api(user_message[1:].strip())  # حذف نقطه و ارسال پیام
-            last_message_time_global = current_time
-            await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
-            return
-
-        # بررسی ریپلای بودن پیام
-         # بررسی ریپلای بودن پیام
-        if update.message.reply_to_message and update.message.reply_to_message.from_user.id == context.bot.id:
-            # در صورت ریپلای، پیام قبلی کاربر و پاسخ ربات ارسال شود
-            response = send_message_to_old_api(user_id, user_message, reply_to_message=update.message.reply_to_message.text)
-        else:
-            # در غیر این صورت فقط پیام جدید کاربر ارسال شود
-            response = send_message_to_old_api(user_id, user_message)
-
-        last_message_time_global = current_time
-        await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
-
-        # بررسی دستور /generate
+        # **اول بررسی کن که آیا پیام /generate هست یا نه**
         if user_message.startswith("/generate"):
             prompt = ' '.join(user_message.split()[1:])
             progress_message = await update.message.reply_text("Generating image...")
@@ -161,7 +142,23 @@ async def handle_message(update: Update, context):
                 await update.message.reply_photo(photo=image_buffer)
             else:
                 await progress_message.edit_text("Error generating image.")
+            return  # **اینجا return کن که کد ادامه پیدا نکنه**
+
+        # **در غیر این صورت، پیام به API قدیمی فرستاده شود**
+        if user_message.startswith("."):
+            response = send_message_to_old_api(user_message[1:].strip())  # حذف نقطه و ارسال پیام
+            last_message_time_global = current_time
+            await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
             return
+
+        # بررسی ریپلای بودن پیام
+        if update.message.reply_to_message and update.message.reply_to_message.from_user.id == context.bot.id:
+            response = send_message_to_old_api(user_id, user_message, reply_to_message=update.message.reply_to_message.text)
+        else:
+            response = send_message_to_old_api(user_id, user_message)
+
+        last_message_time_global = current_time
+        await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
 
     else:
         await update.message.reply_text("لطفا اول دستور /start رو وارد کنید تا بتوانید از ربات استفاده کنید.", reply_to_message_id=update.message.message_id)
@@ -250,9 +247,6 @@ async def translate_command(update: Update, context: CallbackContext):
 
     response = send_message_to_old_api(user_id, user_message)
     await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
-
-
-
 
 # راه‌اندازی بات تلگرام
 if __name__ == '__main__':
