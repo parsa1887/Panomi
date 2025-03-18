@@ -26,9 +26,10 @@ def GORBAH(message):
 
 user_started = {}
 last_message_time_global = 0
+user_memory = {}
 
 # تابع ارسال پیام به API قدیمی (chatbot-ji1z)
-def send_message_to_old_api(user_message):
+def send_message_to_old_api(user_id, user_message, reply_to_message=None):
     url = "https://chatbot-ji1z.onrender.com/chatbot-ji1z"
     headers = {
         "accept": "application/json",
@@ -44,16 +45,34 @@ def send_message_to_old_api(user_message):
         "accept-encoding": "identity",  # غیرفعال کردن فشرده‌سازی
         "accept-language": "en-US,en;q=0.9"
     }
-    payload = {"messages": [{"role": "user", "content": user_message}]}
-    proxies = {"http": None, "https": None}
+    messages = []
+    
+    # اگر پیام قبلی از این کاربر ذخیره شده باشد، اضافه کن
+    if user_id in user_memory:
+        messages.append({"role": "user", "content": user_memory[user_id]["user"]})
+        messages.append({"role": "assistant", "content": user_memory[user_id]["bot"]})
+
+    # پیام جدید کاربر اضافه شود
+    messages.append({"role": "user", "content": user_message})
+
+    payload = {"messages": messages}
+
     try:
-        response = requests.post(url, json=payload, headers=headers, proxies=proxies)
+        response = requests.post(url, json=payload, headers=headers)
         response.raise_for_status()
         api_response = response.json()
-        return api_response['choices'][0]['message']['content']
+        bot_reply = api_response['choices'][0]['message']['content']
+
+        # ذخیره پیام جدید در حافظه کاربر
+        user_memory[user_id] = {
+            "user": user_message,
+            "bot": bot_reply
+        }
+
+        return bot_reply
     except requests.exceptions.RequestException as e:
         return f"Error: {e}"
-
+        
 # تابعی برای تولید تصویر از پرامپت
 def generate_image(prompt: str):
     url = "https://ai-api.magicstudio.com/api/ai-art-generator"
@@ -121,11 +140,16 @@ async def handle_message(update: Update, context):
             return
 
         # بررسی ریپلای بودن پیام
+         # بررسی ریپلای بودن پیام
         if update.message.reply_to_message and update.message.reply_to_message.from_user.id == context.bot.id:
-            response = send_message_to_old_api(user_message)
-            last_message_time_global = current_time
-            await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
-            return  
+            # در صورت ریپلای، پیام قبلی کاربر و پاسخ ربات ارسال شود
+            response = send_message_to_old_api(user_id, user_message, reply_to_message=update.message.reply_to_message.text)
+        else:
+            # در غیر این صورت فقط پیام جدید کاربر ارسال شود
+            response = send_message_to_old_api(user_id, user_message)
+
+        last_message_time_global = current_time
+        await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
 
         # بررسی دستور /generate
         if user_message.startswith("/generate"):
