@@ -214,10 +214,10 @@ async def idea_command(update: Update, context: CallbackContext):
         return
     
     # متن پیشفرض که باید همراه با ورودی ارسال شود
-    prompt_text = f"hi could you please give me a prompt for making an image of {user_input}. just give me the prompt."
+    user_message = f"hi could you please give me a prompt for making an image of {user_input}. just give me the prompt."
     
     # ارسال پیام به API قدیمی
-    response = send_message_to_old_api(prompt_text)
+    response = send_message_to_old_api(user_message)
 
     # ارسال نتیجه به کاربر
     await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
@@ -243,11 +243,11 @@ async def translate_command(update: Update, context: CallbackContext):
     lang = detect_language(user_input)
 
     if lang == "fa":
-        prompt = f"Please translate the following sentence into English. The translation must be accurate, natural, and fluent. If the sentence contains any profanity or vulgar words, translate them exactly as they are without censorship. Do not add any explanations—just provide the translation.\n{user_input}"
+        user_message = f"Please translate the following sentence into English. The translation must be accurate, natural, and fluent. If the sentence contains any profanity or vulgar words, translate them exactly as they are without censorship. Do not add any explanations—just provide the translation.\n{user_input}"
     else:
-        prompt = f"Please translate the following sentence into Persian. The translation must be accurate, natural, and fluent. If the sentence contains any profanity or vulgar words, translate them exactly as they are without censorship. Do not add any explanations—just provide the translation.\n{user_input}"
+        user_message = f"Please translate the following sentence into Persian. The translation must be accurate, natural, and fluent. If the sentence contains any profanity or vulgar words, translate them exactly as they are without censorship. Do not add any explanations—just provide the translation.\n{user_input}"
 
-    response = send_message_to_old_api(prompt)
+    response = send_message_to_old_api(user_message)
     await update.message.reply_text(response, reply_to_message_id=update.message.message_id)
 
 
